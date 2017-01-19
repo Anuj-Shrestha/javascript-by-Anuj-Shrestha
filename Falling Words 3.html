@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Falling Words</title>
+	<style type="text/css">
+		#container{
+			display: block;
+			position: absolute;
+			margin: auto;
+			width: 900px;
+			height: 500px;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			border: 1px solid black;
+			background: #eee;
+		}
+		#player-box{
+			display: inline-block;
+			text-align: center;
+			position: absolute;
+			margin: auto;
+			width: 200px;
+			height: 50px;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			border: 1px solid black;
+			background: grey;
+			font-size: 20px;
+		}
+		.my-words{
+			display: block;
+			position: absolute;
+			font-size: 20px;
+			padding: 5px 10px;
+			border: 1px solid black;
+		}
+		#game-over{
+			display: none;
+			position: absolute;
+			top: 45%;
+			left: 35%;
+			font-size: 40px;
+			z-index: 10;
+			text-align: center;
+		}
+		#score-container{
+			position: absolute;
+			width: 120px;
+			top: 20%;
+			left: 8%;
+			font-size: 20px;
+			text-align: right;
+		}
+		#timer-text{
+			font-size: 42px;
+			text-decoration: underline;
+		}
+		#line {
+			display: block;
+			margin: 0 auto;			
+			margin-top: 440px;
+			width: 900px;
+
+		}
+	</style>
+</head>
+<body>
+	<div id="game-over">
+		<p>Game Over</p>
+		<p>Press Spacebar to Start again<p>
+	</div>
+	<div id="score-container">
+		<p id="score-text">Score: 0</p>
+		<p id="high-score-text"></p>
+		<p id="timer-text"></p>
+	</div>
+<script type="text/javascript">
+	(function(){
+		var 
+			gameState = 1,
+			WIDTH = 900,
+			HEIGHT = 500,
+			speed = 1,
+			generateSpeed = 1000,
+			text = "AEabcdefghijklmnopqrstuvwxyz",
+			LENGTH = text.length,
+			getRandom = function(max,min){
+				var random = Math.floor(Math.random() * (max - min + 1) + min);
+					if (random === 0){
+						return getRandom(max, min);
+					}
+
+					return random;
+				},
+
+			// containers
+			container,
+			generationLoop,
+			animationLoop,
+			gameTimeLoop,
+			count,
+			playerBox,
+			textEntered = '',
+			wordArray = [],
+			score = 0,
+			scoreText = document.getElementById('score-text'),
+			highScore = 0,
+			highScoreText = document.getElementById('high-score-text'),
+			myStorage = localStorage,
+			oldHighScore = localStorage.getItem('fallingHighScore'),
+			timer = 60,
+			timerText = document.getElementById('timer-text'),
+			gameOverText = document.getElementById('game-over'),
+
+
+			// Words class
+			word = function() {
+				this.myWord;
+				this.length = 0;
+				this.x = 0;
+				this.y = 0;
+				this.text = 'a';
+				this.index = 0;
+				this.init = function(){
+					this.myWord = document.createElement('p');
+					this.myWord.className = 'my-words';
+					this.myWord.innerHTML = this.text;
+					this.myWord.style.left = this.x +'px';
+					this.myWord.style.top = this.y + 'px'; 
+					container.appendChild(this.myWord);
+				}
+
+				this.update = function() {
+					speed += 0.05;
+					this.y += 20+speed;
+					if(this.y > 400){
+						this.myWord.style.display = 'none';
+						for(var k = 0; k < count; k++){
+							if (wordArray[k].text === this.text){
+								wordArray.splice(k, 1);
+								count--;
+							}
+						}
+					}
+				}
+
+				this.draw = function(){
+					this.myWord.style.transition = "0.5s linear";
+					this.myWord.style.left = this.x + 'px';
+					this.myWord.style.top = this.y + 'px';
+				}
+			};
+
+		
+		// Game main function starts here	
+		function main(){
+			console.log('main', speed);
+			gameTimer();
+			speed = 1;
+console.log('main1', speed);
+			highScoreText.innerHTML = 'Highscore: ' + oldHighScore; 
+			timerText.innerHTML = 'Time ' + timer;
+
+			container = document.createElement('div');
+			container.id = 'container';
+			container.width = WIDTH;
+			container.height = HEIGHT;
+			document.body.appendChild(container);
+
+			playerBox = document.createElement('div');
+			playerBox.id = 'player-box';
+			container.appendChild(playerBox);
+
+			var drawLine = document.createElement('hr');
+			drawLine.id = 'line';
+			container.appendChild(drawLine);
+
+			var that = this;
+
+			function init(){
+				speed = 1;
+				count = 0;
+
+				generationLoop = setInterval(function(){
+					var newWord = new word();
+					newWord.x = getRandom(10, 850);
+					newWord.y = 0;
+					newWord.index = count;
+					newWord.length = getRandom(1, 6);
+					(function(){ 
+						for (var i = 0; i < newWord.length; i++){
+							newWord.text += text.charAt(getRandom(0, LENGTH));
+							// console.log(newWord.text);
+						}
+					})();
+// console.log(speed);
+					newWord.init();
+
+					wordArray.push(newWord);
+					count++;
+					moveWords(newWord);
+
+				}, generateSpeed);
+			}
+
+			init();
+	
+			function moveWords(currentWord){
+				animationLoop = setInterval(function(){
+					currentWord.update();
+					currentWord.draw();
+				}, 500);
+			}
+		}
+
+		// document.addEventListener('keydown', function (evt) {
+		// 	if (evt.keyCode === 32){
+		// 		if(gameStopped === 0){
+		// 			that.player.y -= 50;
+		// 			speed = 0.3;
+		// 		}
+		// 	}
+		// });
+		document.addEventListener('keydown', (event) => {
+
+		  const keyName = event.key;
+
+		  if (keyName === 'Control'|| keyName === 'Shift') {
+		    // not alert when only Control key is pressed.
+		    return;
+		  }
+		  if (keyName === 'Backspace') {
+		  	playerBox.innerHTML = '';
+		  	textEntered = '';
+		  	return;
+		  }
+		  if (keyName === ' '|| keyName === 'Enter') {
+		  	playerBox.innerHTML = '';
+		  	textEntered = '';
+		    // checkWordHit();
+		    return;
+		  }
+		  
+
+		  if (event.ctrlKey) {
+		    // Even though event.key is not 'Control' (i.e. 'a' is pressed),
+		    // event.ctrlKey may be true if Ctrl key is pressed at the time.
+		    // alert(`Combination of ctrlKey + ${keyName}`);
+		  } else {
+		    // alert(`Key pressed ${keyName}`);
+		    textEntered += keyName;
+		    playerBox.innerHTML = textEntered;
+		    checkWordHit();
+		  }
+		}, false);
+
+		function checkWordHit(){
+			for (var k = 0; k < count; k++){
+				var enemyWord = wordArray[k];
+							
+				if (enemyWord.text === textEntered) {
+					enemyWord.myWord.style.display = 'none';
+					wordArray.splice(k, 1);
+					console.log(wordArray);
+					// delete wordArray[k];
+					textEntered = '';
+					playerBox.innerHTML = '';
+					score++;
+					scoreText.innerHTML = 'Score: ' + score;
+					oldHighScore = localStorage.getItem('fallingHighScore'),
+					oldHighScore = Math.max(score, oldHighScore);
+					highScoreText.innerHTML = 'Highscore: ' + oldHighScore;
+					localStorage.setItem('fallingHighScore', oldHighScore);
+					count--;
+				}
+			}
+			console.log('out of loop');
+			// textEntered = '';
+		}
+
+		function gameTimer(){
+			gameTimeLoop = setInterval(function(){
+				timerText.innerHTML = 'Time ' + timer--;
+			}, 1000);
+			setTimeout(function(){				
+				clearInterval(generationLoop);
+				clearInterval(animationLoop);
+				clearInterval(gameTimeLoop);
+				gameOverText.style.display = 'block';
+				timer = 60;
+				gameState = 0;
+					document.addEventListener('keydown', function (evt) {
+						if (gameState === 0){
+							if (evt.keyCode === 32){
+								gameOverText.style.display = 'none';
+								gameState = 1;
+								score = 0;
+								speed = 1;
+								scoreText.innerHTML = 'Score: ' + score;
+								main();
+							}
+						}
+					});
+				// main();
+			}, 62000);
+		}
+		// new FallingWords().init();
+		main();
+
+	})();
+</script>
+</body>
+</html>
