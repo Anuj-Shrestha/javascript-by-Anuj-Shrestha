@@ -107,6 +107,9 @@
 
 <script type="text/javascript">
 (function () {
+	var AABBIntersect = function(ax, ay, aw, ah, bx, by, bw, bh) {
+			return ax < bx+bw && ay < by+bh && bx < ax+aw && by < ay+ah;
+			};
 	
 	var
 	HEIGHT = 600,
